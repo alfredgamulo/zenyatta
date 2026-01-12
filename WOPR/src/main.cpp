@@ -178,6 +178,8 @@ void setup()
   if (!mx.begin())
     PRINTS("\nMD_MAX72XX initialization failed");
 
+  mx.control(MD_MAX72XX::INTENSITY, 2); // Set brightness (0-15, lower = dimmer)
+
   PRINTS("\nConnecting to Wifi...");
   WiFi.begin(ssid, password);
   int attempts = 0;
