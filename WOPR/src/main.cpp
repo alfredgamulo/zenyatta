@@ -57,7 +57,6 @@ void scrollText(const char *p)
   uint8_t cBuf[8]; // this should be ok for all built-in fonts
 
   PRINTS("\nScrolling text");
-  mx.clear();
 
   while (*p != '\0')
   {
@@ -71,12 +70,11 @@ void scrollText(const char *p)
     }
   }
 
-  // Keep shifting until the display is clear
-  // We shift for (Number of Devices * 8 columns per device)
-  for (uint16_t i = 0; i < (MAX_DEVICES * 8); i++)
+  // Add a tab-spaced gap (8 columns) before continuing
+  for (uint8_t i = 0; i < 8; i++)
   {
     mx.transform(MD_MAX72XX::TSL);
-    mx.setColumn(0, 0); // Inject empty (blank) columns
+    mx.setColumn(0, 0);
     delay(DELAYTIME);
   }
 }
@@ -142,6 +140,5 @@ void loop()
   {
     scrollText("WiFi Error");
   }
-  delay(1000); // Wait 1 second before next update
 #endif
 }
