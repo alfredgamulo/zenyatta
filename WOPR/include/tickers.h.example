@@ -1,0 +1,17 @@
+#ifndef TICKERS_H
+#define TICKERS_H
+
+// List of stock tickers to display
+// You can add or remove tickers here without modifying the main program logic
+const char *stockTickers[] = {
+    "AAPL",
+    "MSFT",
+    "GOOGL",
+    "AMZN",
+    "TSLA", 
+    "NVDA"
+};
+
+const int stockTickerCount = sizeof(stockTickers) / sizeof(stockTickers[0]);
+
+#endif

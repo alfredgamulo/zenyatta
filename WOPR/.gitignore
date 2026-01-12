@@ -5,4 +5,5 @@
 .vscode/ipch
 
 # Credentials
-src/credentials.h
+include/credentials.h
+include/tickers.h

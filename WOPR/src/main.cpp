@@ -4,8 +4,12 @@
 #include <Arduino.h>
 #include <MD_MAX72xx.h>
 #include <WiFi.h>
+#include <HTTPClient.h>
+#include <WiFiClientSecure.h>
+#include <ArduinoJson.h>
 #include "time.h"
 #include "credentials.h"
+#include "tickers.h"
 
 // Turn on debug statements to the serial output
 #define DEBUG 1
@@ -47,9 +51,10 @@ MD_MAX72XX mx = MD_MAX72XX(HARDWARE_TYPE, CS_PIN, MAX_DEVICES);
 #define DELAYTIME 100 // in milliseconds
 #define ROW_SIZE 8    // MAX72XX modules are 8x8 LED matrices
 
-// Declare scrollText and bounce functions
+// Declare scrollText and other functions
 void scrollText(const char *p);
 const char *getTimeString();
+void displayStocks();
 
 void scrollText(const char *p)
 {
@@ -99,6 +104,70 @@ const char *getTimeString()
   return timeString;
 }
 
+void displayStocks()
+{
+  for (int i = 0; i < stockTickerCount; i++)
+  {
+    WiFiClientSecure client;
+    client.setInsecure();
+    HTTPClient http;
+    
+    String symbol = stockTickers[i];
+    // Simple URL encoding for symbols with special characters like '/'
+    String cleanSymbol = symbol;
+    cleanSymbol.replace("/", "%2F");
+
+    String url = "https://finnhub.io/api/v1/quote?token=" + String(FINNHUB_KEY) + "&symbol=" + cleanSymbol;
+
+    PRINTS("\nFetching: "); PRINTS(symbol.c_str());
+
+    http.begin(client, url);
+    int httpResponseCode = http.GET();
+    
+    String displayText = "";
+    
+    if (httpResponseCode > 0)
+    {
+      String payload = http.getString();
+      PRINTS(" Response: "); PRINTS(payload.c_str());
+      
+      JsonDocument doc; 
+      DeserializationError error = deserializeJson(doc, payload);
+
+      if (!error)
+      {
+        float price = doc["c"];
+        float change = doc["d"];
+        
+        if (price != 0) {
+            displayText = symbol;
+            displayText += ": $";
+            displayText += String(price, 2);
+            displayText += " ";
+            if (change >= 0) displayText += "+";
+            displayText += String(change, 2);
+            displayText += "";
+        } else {
+            displayText = symbol + ": N/A";
+        }
+      }
+      else
+      {
+        displayText = symbol + ": ErrJson";
+      }
+    }
+    else
+    {
+      displayText = symbol + ": ErrHttp";
+    }
+    
+    http.end();
+    
+    // Scroll this ticker immediately
+    scrollText(displayText.c_str());
+  }
+}
+
 void setup()
 {
 #if DEBUG
@@ -133,8 +202,10 @@ void loop()
 {
 #if 1
   if (WiFi.status() == WL_CONNECTED)
-  {
+  { 
     scrollText(getTimeString());
+    displayStocks();
+    delay(1000);
   }
   else
   {
